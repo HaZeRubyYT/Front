@@ -14,7 +14,7 @@ body {
 
 /* / Color of the scrollbar track / */
 ::-webkit-scrollbar-track {
-  opacity: 1;
+  opacity: 0.75;
 }
 
 /* / Styles for the scrollbar handle / */
@@ -25,5 +25,5 @@ body {
 
 /* / On hover, increase the size of the scrollbar handle */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #bb8c8c;
+  background-color: #8c9cbb;
 }

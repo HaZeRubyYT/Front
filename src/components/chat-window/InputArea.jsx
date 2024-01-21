@@ -1,6 +1,11 @@
 import {BiSolidSend} from "react-icons/bi";
 
-export default function InputArea({input, changeInput, sendMessage}) {
+export default function InputArea({
+  input,
+  changeInput,
+  sendMessage,
+  scrollDiv,
+}) {
   return (
     <form
       className="flex self-end flex-grow text-black justify-center h-[8vh] items-center gap-3 mx-3 my-2"
@@ -21,6 +26,11 @@ export default function InputArea({input, changeInput, sendMessage}) {
         onClick={() => {
           if (input.trim().length > 0) {
             sendMessage();
+            scrollDiv.current.scrollIntoView({
+              behavior: "smooth",
+              block: "end",
+              inline: "nearest",
+            });
           }
         }}>
         <BiSolidSend />
