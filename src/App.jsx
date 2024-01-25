@@ -25,9 +25,7 @@ function App() {
 
   // useEffect for main socket
   useEffect(() => {
-    const newSocket = io("https://chat-app-server-dev-sqgf.3.us-1.fl0.io", {
-      withCredentials: true,
-    });
+    const newSocket = io("https://chat-app-server-dev-sqgf.3.us-1.fl0.io", {});
     setSocket(newSocket);
 
     // Function call to let the server allow a username
