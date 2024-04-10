@@ -2,8 +2,11 @@ import {Input, Button, Typography} from "@material-tailwind/react";
 import {useForm} from "react-hook-form";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup";
+import {useEffect, useState} from "react";
 
-export default function LoginForm({changeLoginState, changeForm}) {
+export default function LoginForm({changeForm, checkLogin, socket}) {
+  const [loginError, setError] = useState("");
+
   const validationSchema = Yup.object({
     email: Yup.string().trim().required("Required"),
     password: Yup.string().trim().required("Required"),
@@ -23,13 +26,18 @@ export default function LoginForm({changeLoginState, changeForm}) {
     resolver: yupResolver(validationSchema),
   });
 
+  useEffect(() => {
+    socket?.on("login error", () => {
+      setError("Invalid Email or Password. Please Try Again");
+    });
+  }, [socket]);
+
   return (
     <form
       className="flex flex-col gap-4 mt-8 mb-1 w-80 sm:w-96"
       onSubmit={handleSubmit((data, event) => {
-        console.log(data);
         console.log(getValues());
-        changeLoginState();
+        checkLogin(data);
         event.preventDefault();
       })}
       noValidate>
@@ -45,7 +53,7 @@ export default function LoginForm({changeLoginState, changeForm}) {
         </Typography>
 
         <Input
-          {...register("username")}
+          {...register("email")}
           type="text"
           size="lg"
           placeholder="Email"
@@ -76,6 +84,9 @@ export default function LoginForm({changeLoginState, changeForm}) {
           }}
           autoComplete="off"
         />
+        <Typography variant="h6">
+          <span className="text-red-700 !font-light">{loginError}</span>
+        </Typography>
       </>
       <Button className="mt-6" type="submit" fullWidth>
         log in

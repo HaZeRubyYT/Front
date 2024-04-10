@@ -6,8 +6,9 @@ import {yupResolver} from "@hookform/resolvers/yup";
 
 export default function SignUpForm({
   changeLoginState,
-  // emitNewUser,
+  emitNewUser,
   changeForm,
+  socket,
 }) {
   // Yup validation
   YupPassword(Yup);
@@ -36,6 +37,7 @@ export default function SignUpForm({
     register,
     handleSubmit,
     getValues,
+    setError,
     formState: {errors},
   } = useForm({
     defaultValues: {
@@ -53,8 +55,40 @@ export default function SignUpForm({
       onSubmit={handleSubmit((data, event) => {
         console.log(data);
         console.log(getValues());
-        changeLoginState();
-        // emitNewUser(getValues("username", "email", "password"));
+
+        // checks if username or email exists
+        if (socket) {
+          socket.emit(
+            "check sign up",
+            getValues("username"),
+            getValues("email"),
+            res => {
+              if (res.status == "ok") {
+                const newUserData = {
+                  username: getValues("username"),
+                  email: getValues("email"),
+                  password: getValues("password"),
+                };
+                emitNewUser(newUserData);
+                changeLoginState(false);
+              } else if (res.status == "error") {
+                if (res.email) {
+                  setError("email", {
+                    type: "custom",
+                    message: "Email already Exists",
+                  });
+                }
+                if (res.username) {
+                  setError("username", {
+                    type: "custom",
+                    message: "Username already Exists",
+                  });
+                }
+              }
+            },
+          );
+        }
+
         event.preventDefault();
       })}
       noValidate>
