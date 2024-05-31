@@ -2,11 +2,12 @@ import {Input, Button, Typography} from "@material-tailwind/react";
 import {useForm} from "react-hook-form";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup";
-import {useEffect, useState} from "react";
 
-export default function LoginForm({changeForm, checkLogin, socket}) {
-  const [loginError, setError] = useState("");
-
+export default function LoginForm({
+  changeForm,
+  checkLogin,
+  loginError,
+}) {
   const validationSchema = Yup.object({
     email: Yup.string().trim().required("Required"),
     password: Yup.string().trim().required("Required"),
@@ -25,12 +26,6 @@ export default function LoginForm({changeForm, checkLogin, socket}) {
     },
     resolver: yupResolver(validationSchema),
   });
-
-  useEffect(() => {
-    socket?.on("login error", () => {
-      setError("Invalid Email or Password. Please Try Again");
-    });
-  }, [socket]);
 
   return (
     <form

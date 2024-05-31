@@ -1,14 +1,16 @@
 import {useCallback, useEffect, useState} from "react";
-import {io} from "socket.io-client";
+// import {io} from "socket.io-client";
 import ChatWindow from "./components/chat-window/ChatWindow.jsx";
 import ContactWindow from "./components/contact-window/ContactWindow.jsx";
 import Form from "./components/login-page/Form.jsx";
 import Modal from "./components/contact-window/Modal.jsx";
+// import {useSocketContext} from "./SocketContext.jsx";
+import {SocketProvider} from "./SocketProvider.jsx";
 
 function App() {
   const [isLogin, setLogin] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [socket, setSocket] = useState(null);
+  // const [socket, setSocket] = useState(null);
   const [message, changeMessage] = useState("Hi");
   const [input, setInput] = useState("");
   const [myUsername, setMyUsername] = useState();
@@ -17,22 +19,24 @@ function App() {
   const [showPopUp, setPopUp] = useState(false);
   const [popUpReason, setReason] = useState("");
   const [textspaceList, setList] = useState("");
-  const [prevent, setPrevent] = useState(false);
+  // const [prevent, setPrevent] = useState(false);
   // const [senderName, setSenderName] = useState();
   // const [allMessages, setAllMessages] = useState([]);
+
+  const socket = useSocketContext();
 
   function changeInput(e) {
     setInput(e.target.value);
   }
 
-  const changeList = useCallback(content => {
-    setList(content);
-  }, []);
+  // const changeList = useCallback(content => {
+  //   setList(content);
+  // }, []);
 
-  const connectSocket = useCallback(() => {
-    const socket = io("http://localhost:3001", {});
-    setSocket(socket);
-  }, []);
+  // const connectSocket = useCallback(() => {
+  //   const socket = io("http://localhost:3001", {});
+  //   setSocket(socket);
+  // }, []);
 
   const changeLoginState = useCallback(fix => {
     if (fix) {
@@ -48,6 +52,12 @@ function App() {
   }, []);
 
   // Function call for sending a message
+  function joinRooms(email, toJoin) {
+    socket.emit("join room", email, toJoin, res => {
+      console.log(res);
+    });
+  }
+
   function sendMessage() {
     if (socket) {
       socket.emit("sent message", input, myUsername);
@@ -69,12 +79,14 @@ function App() {
   }
 
   // useEffect for main socket
+  // useEffect(() => {
+  // const socket = io("http://localhost:3001", {});
+  // setSocket(socket);
+  // Function call to let the server initialize
   useEffect(() => {
-    connectSocket();
-    
-    // Function call to let the server initialize
     socket.on("connect", () => {
       socket.emit("init");
+      console.log("Hi");
     });
 
     socket.on("login", (email, username) => {
@@ -85,12 +97,12 @@ function App() {
       updateUserDetails(email, username);
       // emitJoinTextSpace(-1);
     });
-    socket.on("prevent", () => {
-      setPrevent(val => {
-        console.log(!val);
-        return !val;
-      });
-    });
+    // socket.on("prevent", () => {
+    //   setPrevent(val => {
+    //     console.log(!val);
+    //     return !val;
+    //   });
+    // });
 
     // Function call to get room IDs and names
     socket.on("get user textspace", (textSpaceArray, roomsArray, callback) => {
@@ -98,11 +110,6 @@ function App() {
       console.log("Hi I have arrived");
       console.log(roomsArray, textSpaceArray);
     });
-
-    socket.on("example", val => {
-      console.log(val);
-    });
-
     // Function call to get usernames
     socket.on("get username", list => {
       setAllUsernames(list);
@@ -120,12 +127,21 @@ function App() {
     });
 
     return () => {
-      socket.disconnect();
+      socket.off("connect");
+      socket.off("login");
+      socket.off("get user textspace");
+      socket.off("get username");
+      socket.off("chat message");
     };
-  }, [changeLoginState, updateUserDetails, myEmail, socket]);
+  }, [socket, changeLoginState, updateUserDetails]);
+
+  // socket.on("disconnect", () => {
+  //   socket.disconnect();
+  // });
+  // }, [changeLoginState, socket, updateUserDetails]);
 
   return isLogin ? (
-    <>
+    <SocketProvider>
       {showPopUp && (
         <Modal
           setPopUp={setPopUp}
@@ -156,13 +172,13 @@ function App() {
         />
         {/* <button onClick={emit} className="bg-white size-3"></button> */}
       </div>
-    </>
+    </SocketProvider>
   ) : (
     <Form
       changeLoginState={changeLoginState}
-      socket={socket}
       setMyEmail={setMyEmail}
       setMyUsername={setMyUsername}
+      joinRooms={joinRooms}
     />
   );
 }

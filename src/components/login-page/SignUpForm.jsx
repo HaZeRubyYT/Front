@@ -8,7 +8,9 @@ export default function SignUpForm({
   changeLoginState,
   emitNewUser,
   changeForm,
-  socket,
+  connectToMongoDB,
+  closeMongoDBConnection,
+  client,
 }) {
   // Yup validation
   YupPassword(Yup);
@@ -56,38 +58,113 @@ export default function SignUpForm({
         console.log(data);
         console.log(getValues());
 
-        // checks if username or email exists
-        if (socket) {
-          socket.emit(
-            "check sign up",
-            getValues("username"),
-            getValues("email"),
-            res => {
-              if (res.status == "ok") {
-                const newUserData = {
-                  username: getValues("username"),
-                  email: getValues("email"),
-                  password: getValues("password"),
-                };
-                emitNewUser(newUserData);
-                changeLoginState(false);
-              } else if (res.status == "error") {
-                if (res.email) {
+        connectToMongoDB()
+          .then(async () => {
+            const username = getValues("username");
+            const email = getValues("email");
+            try {
+              const db = client.db("quick-chat");
+              const userData = db.collection("userData");
+
+              const resultUsername = await userData
+                .find({username: username})
+                .toArray();
+              const resultEmail = await userData.find({email: email}).toArray();
+              switch (true) {
+                case resultUsername.length == 0 && resultEmail.length == 0:
+                  // callback({status: "ok"});
+
+                  emitNewUser({
+                    username: getValues("username"),
+                    email: getValues("email"),
+                    password: getValues("password"),
+                  });
+                  changeLoginState(false);
+
+                  break;
+                case resultUsername.length > 0 && resultEmail.length > 0:
+                  // callback({
+                  //   status: "error",
+                  //   email: true,
+                  //   username: "true",
+                  // });
+
                   setError("email", {
                     type: "custom",
                     message: "Email already Exists",
                   });
-                }
-                if (res.username) {
                   setError("username", {
                     type: "custom",
                     message: "Username already Exists",
                   });
-                }
+
+                  break;
+                case resultEmail.length > 0 && resultUsername.length == 0:
+                  // callback({
+                  //   status: "error",
+                  //   email: true,
+                  //   username: false,
+                  // });
+
+                  setError("email", {
+                    type: "custom",
+                    message: "Email already Exists",
+                  });
+
+                  break;
+                case resultUsername.length > 0 && resultEmail.length == 0:
+                  // callback({
+                  //   status: "error",
+                  //   email: false,
+                  //   username: true,
+                  // });
+
+                  setError("username", {
+                    type: "custom",
+                    message: "Username already Exists",
+                  });
+
+                  break;
+                default:
               }
-            },
-          );
-        }
+            } catch (err) {
+              console.error(err);
+            }
+          })
+          .finally(closeMongoDBConnection());
+
+        // checks if username or email exists
+        // if (socket) {
+        //   socket.emit(
+        //     "check sign up",
+        //     getValues("username"),
+        //     getValues("email"),
+        //     res => {
+        //       if (res.status == "ok") {
+        //         const newUserData = {
+        //           username: getValues("username"),
+        //           email: getValues("email"),
+        //           password: getValues("password"),
+        //         };
+        //         emitNewUser(newUserData);
+        //         changeLoginState(false);
+        //       } else if (res.status == "error") {
+        //         if (res.email) {
+        //           setError("email", {
+        //             type: "custom",
+        //             message: "Email already Exists",
+        //           });
+        //         }
+        //         if (res.username) {
+        //           setError("username", {
+        //             type: "custom",
+        //             message: "Username already Exists",
+        //           });
+        //         }
+        //       }
+        //     },
+        //   );
+        // }
 
         event.preventDefault();
       })}
